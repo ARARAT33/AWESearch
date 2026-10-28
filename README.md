@@ -2,6 +2,22 @@
 
 **One search box for your files and the web.** AWESEARCH is the AWE ecosystem's cross-platform search and browsing workspace, designed for Android, Linux, Windows, macOS, and the web.
 
+## UI previews
+
+These SVG preview images are stored in the repository so the product direction is visible directly on GitHub. They are **illustrative UI previews**, not screenshots captured from a deployed production service; result cards use sample content.
+
+### Desktop workspace
+
+![AWESEARCH desktop workspace preview](docs/screenshots/desktop-home.svg)
+
+### Local search results
+
+![AWESEARCH local results preview](docs/screenshots/local-results.svg)
+
+### Mobile responsive layout
+
+![AWESEARCH mobile layout preview](docs/screenshots/mobile-home.svg)
+
 ## Product goals
 
 - **Local-first indexed search:** users choose folders; an index supports fast filename and extracted-text search. Folder access is explicit and revocable.
