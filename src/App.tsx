@@ -123,10 +123,11 @@ export default function App() {
     if (!chosen.length) return;
     setBusy(true); setNotice('');
     const indexed: IndexedFile[] = [];
+    const extractionWarnings: string[] = [];
     for (const file of chosen) {
       const path = (file as File & {webkitRelativePath?: string}).webkitRelativePath || file.name;
       const extracted = await extractFileText(file);
-      if (extracted.warning) setNotice(previous => [previous, file.name + ': ' + extracted.warning].filter(Boolean).join(' '));
+      if (extracted.warning) extractionWarnings.push(file.name + ': ' + extracted.warning);
       indexed.push({ id: path + ':' + file.size + ':' + file.lastModified, name: file.name, path, size: file.size, modified: file.lastModified, type: extOf(file.name) || 'file', text: extracted.text });
     }
     setFiles(old => {
@@ -135,7 +136,7 @@ export default function App() {
       return [...byId.values()].sort((a,b) => b.modified-a.modified);
     });
     setBusy(false);
-    setNotice('Indexed ' + indexed.length + ' file(s). Selectable-text PDFs are supported; scanned PDFs and Office files may only be indexed by name. ' + t.localOnly);
+    setNotice('Indexed ' + indexed.length + ' file(s). Selectable-text PDFs are supported; scanned PDFs and Office files may only be indexed by name. ' + t.localOnly + (extractionWarnings.length ? ' Notes: ' + extractionWarnings.join(' ') : ''));
     event.target.value = '';
   };
   const clearIndex = () => { setFiles([]); setNotice('Local index cleared.'); };
