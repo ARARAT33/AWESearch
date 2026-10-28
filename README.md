@@ -5,13 +5,13 @@
 ## Current working web MVP
 
 - **Local search:** choose files or a folder, index filenames and supported text, and search by filename, path, or content with relevance scoring and snippets.
-- **PDF text extraction:** extract selectable text from PDFs up to 20 MB and 200 pages (bounded to 500,000 characters). Scanned PDFs require OCR and currently fall back to filename/metadata indexing.
+- **Document extraction:** extract selectable text from PDFs up to 20 MB and 200 pages, plus DOCX text (bounded to 500,000 characters per file). Scanned PDFs require OCR and currently fall back to filename/metadata indexing; legacy `.doc` files are not supported.
 - **Persistent local index:** IndexedDB first, with migration from the earlier localStorage index and a localStorage fallback where IndexedDB is unavailable.
 - **File preview:** view text that was extracted into the index, inspect file metadata, and remove an item from the local index.
 - **Web search:** choose DuckDuckGo, Google, or Bing. Queries open in a new tab at the chosen provider; the app does not upload local files or index content to the provider.
 - **Appearance:** device-adaptive theme plus Glass, Aurora, Midnight, Light, and Minimal options; motion and glow effects can be toggled independently.
 - **Languages:** English, Armenian, and Russian interface options.
-- **Index management:** export index metadata and clear the local index.
+- **Index management:** export a full searchable JSON backup (including extracted text), restore a validated backup, and clear the local index. Treat backups as private because they contain extracted document text.
 - **Responsive layout:** desktop sidebar and mobile navigation.
 
 ## UI previews
@@ -33,7 +33,7 @@ These SVG preview images communicate the product direction. They are **illustrat
 ## Known limitations — not yet a complete native product
 
 - The web version can access only files and folders explicitly selected by the user. It cannot continuously scan arbitrary disk paths or watch folders in the background.
-- Text extraction currently covers plain text, Markdown, HTML, JSON, CSV, XML/YAML, logs, common source-code formats, and selectable text from bounded PDF files. Office extraction, image OCR, and archive indexing are not implemented in the web MVP.
+- Text extraction currently covers plain text, Markdown, HTML, JSON, CSV, XML/YAML, logs, common source-code formats, DOCX, and selectable text from bounded PDF files. Scanned-PDF/image OCR, legacy `.doc` extraction, and archive indexing are not implemented in the web MVP.
 - Web search is delegated to the chosen search provider in a separate tab; the app does not yet display provider results inside its own results list or use a server-side search API.
 - The file preview shows extracted text from the index. It cannot reopen an arbitrary local path automatically after the browser's file handle has been discarded.
 - The Tauri shell is a scaffold. Native SQLite FTS5 indexing, incremental folder watchers, OS file-manager integration, and production installers still need implementation and platform testing.
@@ -61,7 +61,7 @@ npm run build
 - **Windows / macOS / Linux:** Tauri 2 desktop shell with native filesystem/indexing service.
 - **Android:** Tauri 2 Android target with Android Storage Access Framework permissions and scoped folder access.
 - **Native index:** SQLite FTS5, metadata, content hashes, incremental updates, and crash recovery.
-- **Text extraction:** bounded, testable adapters for text/Markdown/HTML/CSV/JSON, followed by PDF and Office formats.
+- **Text extraction:** bounded, testable adapters for text/Markdown/HTML/CSV/JSON, followed by bounded PDF and DOCX formats.
 - **ASL:** versioned, permission-declared extension bundles. See [docs/ASL.md](docs/ASL.md).
 - **Detailed architecture and milestone gates:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
