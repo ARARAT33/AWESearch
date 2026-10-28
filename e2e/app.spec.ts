@@ -15,7 +15,7 @@ test('homepage renders and supports web/settings navigation', async ({ page }, t
   await page.getByRole('textbox', { name: 'Search' }).fill('smoke test');
   await expect(page.getByRole('heading', { name: 'awesearch-smoke.txt' })).toBeVisible();
   await page.getByRole('button', { name: 'Open' }).click();
-  await expect(page.getByText(/AWESEARCH local index smoke test content/)).toBeVisible();
+  await expect(page.locator('pre.file-preview-content')).toContainText('AWESEARCH local index smoke test content');
 });
 
 test('responsive mobile layout renders without horizontal overflow', async ({ page }, testInfo) => {
