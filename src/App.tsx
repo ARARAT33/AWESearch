@@ -14,6 +14,54 @@ const extOf = (name: string) => name.includes('.') ? name.split('.').pop()!.toLo
 const fmtSize = (n: number) => n < 1024 ? n + ' B' : n < 1048576 ? (n/1024).toFixed(1) + ' KB' : (n/1048576).toFixed(1) + ' MB';
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 
+const INDEX_DB_NAME = 'awesearch-index-db';
+function openIndexDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    if (!('indexedDB' in window)) { reject(new Error('IndexedDB is unavailable')); return; }
+    const request = window.indexedDB.open(INDEX_DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains('state')) request.result.createObjectStore('state');
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error ?? new Error('Could not open local index'));
+  });
+}
+async function writeIndexDb(files: IndexedFile[]): Promise<void> {
+  const db = await openIndexDb();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction('state', 'readwrite');
+    transaction.objectStore('state').put(files, 'files');
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error ?? new Error('Could not save local index'));
+    transaction.onabort = () => reject(transaction.error ?? new Error('Local index save was cancelled'));
+  }).finally(() => db.close());
+}
+async function readSavedIndex(): Promise<IndexedFile[]> {
+  try {
+    const db = await openIndexDb();
+    const saved = await new Promise<unknown>((resolve, reject) => {
+      const request = db.transaction('state', 'readonly').objectStore('state').get('files');
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error ?? new Error('Could not read local index'));
+    }).finally(() => db.close());
+    if (Array.isArray(saved)) return saved as IndexedFile[];
+  } catch { /* Fall back to the previous localStorage index or an empty index. */ }
+  const raw = localStorage.getItem('awesearch-index-v1');
+  if (!raw) return [];
+  const migrated = JSON.parse(raw) as IndexedFile[];
+  try { await writeIndexDb(migrated); } catch { /* The fallback remains usable. */ }
+  return migrated;
+}
+async function saveIndex(files: IndexedFile[]): Promise<void> {
+  try {
+    await writeIndexDb(files);
+    try { localStorage.removeItem('awesearch-index-v1'); } catch { /* Optional cleanup only. */ }
+  } catch {
+    localStorage.setItem('awesearch-index-v1', JSON.stringify(files));
+  }
+}
+
+
 export default function App() {
   const [lang, setLang] = useState<Lang>('en');
   type Theme = 'auto' | 'glass' | 'aurora' | 'midnight' | 'light' | 'minimal';
@@ -25,6 +73,7 @@ export default function App() {
   const [query, setQuery] = useState('');
   const [mode, setMode] = useState<'all'|'local'|'web'>('all');
   const [files, setFiles] = useState<IndexedFile[]>([]);
+  const [indexReady, setIndexReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [showSettings, setShowSettings] = useState(false);
@@ -34,9 +83,11 @@ export default function App() {
   const t = labels[lang];
 
   useEffect(() => {
+    let active = true;
+    void readSavedIndex().then(saved => { if (active) setFiles(saved); }).catch(() => {
+      if (active) setNotice('Could not restore the local index. You can start a new one.');
+    }).finally(() => { if (active) setIndexReady(true); });
     try {
-      const raw = localStorage.getItem('awesearch-index-v1');
-      if (raw) setFiles(JSON.parse(raw) as IndexedFile[]);
       const savedProvider = localStorage.getItem('awesearch-web-provider');
       if (savedProvider === 'duckduckgo' || savedProvider === 'google' || savedProvider === 'bing') setWebProvider(savedProvider);
       const savedLang = localStorage.getItem('awesearch-lang');
@@ -48,12 +99,12 @@ export default function App() {
       const savedGlow = localStorage.getItem('awesearch-glow');
       if (savedGlow !== null) setGlow(savedGlow === 'true');
     } catch { /* Corrupt browser storage is safely ignored. */ }
+    return () => { active = false; };
   }, []);
   useEffect(() => {
-    try { localStorage.setItem('awesearch-index-v1', JSON.stringify(files)); } catch {
-      setNotice('Browser storage is full. Try indexing fewer or smaller files.');
-    }
-  }, [files]);
+    if (!indexReady) return;
+    void saveIndex(files).catch(() => setNotice('Browser storage is unavailable. Export the index to avoid losing this session.'));
+  }, [files, indexReady]);
   useEffect(() => { localStorage.setItem('awesearch-lang', lang); document.documentElement.lang = lang; }, [lang]);
   useEffect(() => { try { localStorage.setItem('awesearch-web-provider', webProvider); } catch { /* Session-only fallback. */ } }, [webProvider]);
   useEffect(() => {
