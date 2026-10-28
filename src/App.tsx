@@ -22,7 +22,7 @@ export default function App() {
   const [notice, setNotice] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);\n  const folderRef = useRef<HTMLInputElement>(null);
   const t = labels[lang];
 
   useEffect(() => {
@@ -92,7 +92,7 @@ export default function App() {
       <button className={'nav-item '+(mode==='web'?'active':'')} onClick={()=>{setMode('web');setSidebarOpen(false)}}><Globe2 size={18}/>{t.web}<span className="soon">SETUP</span></button>
       <div className="side-divider"/>
       <div className="side-label">YOUR WORKSPACE</div>
-      <button className="nav-item" onClick={()=>fileRef.current?.click()}><FolderSearch size={18}/>{t.add}</button>
+      <button className="nav-item" onClick={()=>fileRef.current?.click()}><Files size={18}/>Add files</button>\n      <button className="nav-item" onClick={()=>folderRef.current?.click()}><FolderSearch size={18}/>Index a folder</button>
       <button className="nav-item" onClick={()=>setShowSettings(true)}><Settings2 size={18}/>{t.settings}</button>
       <div className="sidebar-bottom">
         <div className="privacy-card"><ShieldCheck size={18}/><div><b>{t.privacy}</b><p>{t.privacyText}</p></div></div>
@@ -111,7 +111,7 @@ export default function App() {
       <section className="content-area">
         {notice && <div className="notice"><ShieldCheck size={17}/><span>{notice}</span><button onClick={()=>setNotice('')} aria-label="Dismiss"><X size={16}/></button></div>}
         {!query.trim() ? <div className="welcome-grid">
-          <div className="welcome-card primary-card"><div className="card-icon"><FolderSearch size={23}/></div><div className="card-tag">PRIVATE BY DESIGN</div><h2>{t.emptyTitle}</h2><p>{t.emptyText}</p><button className="primary-button" onClick={()=>fileRef.current?.click()}><Plus size={17}/>{t.add}</button><div className="card-decoration"><Search size={92}/></div></div>
+          <div className="welcome-card primary-card"><div className="card-icon"><FolderSearch size={23}/></div><div className="card-tag">PRIVATE BY DESIGN</div><h2>{t.emptyTitle}</h2><p>{t.emptyText}</p><div className="hero-buttons"><button className="primary-button" onClick={()=>fileRef.current?.click()}><Plus size={17}/>Add files</button><button className="secondary-button" onClick={()=>folderRef.current?.click()}><FolderSearch size={15}/>Index folder</button></div><div className="card-decoration"><Search size={92}/></div></div>
           <div className="stat-card"><div className="stat-icon"><Files size={19}/></div><span>{t.indexed}</span><strong>{files.length.toLocaleString()}</strong><small>Saved in this browser</small><div className="stat-bottom"><span className="status-dot"/>{files.length ? 'INDEX ACTIVE' : 'READY TO INDEX'}</div></div>
           <div className="feature-card"><div className="feature-head"><div className="feature-icon"><ShieldCheck size={19}/></div><span>LOCAL-FIRST</span></div><h3>{t.privacy}</h3><p>{t.privacyText}</p><div className="feature-line"/><p className="muted">{t.indexHelp}</p></div>
           <div className="feature-card"><div className="feature-head"><div className="feature-icon blue"><Globe2 size={19}/></div><span>WEB DISCOVERY</span></div><h3>Local + global</h3><p>{t.webNotice}</p><button className="text-button" onClick={()=>setShowSettings(true)}>Configure search <ArrowUpRight size={15}/></button></div>
@@ -126,7 +126,7 @@ export default function App() {
       </section>
       <footer><span>© AWESEARCH · AWE ECOSYSTEM</span><span><ShieldCheck size={13}/> PRIVATE BY DEFAULT</span><button onClick={()=>setShowSettings(true)}><CircleHelp size={14}/> Help & settings</button></footer>
     </main>
-    <input ref={fileRef} className="hidden-input" type="file" multiple onChange={addFiles} />
+    <input ref={fileRef} className="hidden-input" type="file" multiple onChange={addFiles} />\n    <input ref={el=>{if(el)el.setAttribute("webkitdirectory","");}} className="hidden-input" type="file" multiple onChange={addFiles} />
     {showSettings&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setShowSettings(false)}}><section className="settings-modal"><div className="modal-title"><div><span className="eyebrow">AWESEARCH</span><h2>{t.settings}</h2></div><button className="icon-button" onClick={()=>setShowSettings(false)} aria-label="Close"><X size={19}/></button></div><label className="setting-label">{t.lang}</label><div className="language-options">{(['en','hy','ru'] as Lang[]).map(l=><button className={lang===l?'chosen':''} key={l} onClick={()=>setLang(l)}>{l==='en'?'English':l==='hy'?'Հայերեն':'Русский'}{lang===l&&<span>✓</span>}</button>)}</div><div className="setting-block"><h3>{t.fileTypes}</h3><p>{t.typeText}</p></div><div className="setting-block"><h3>Web search provider</h3><p>{t.webNotice} Provider integration will be enabled in a later milestone; no fake online results are shown.</p></div><div className="setting-block"><h3>Privacy & index</h3><p>{t.indexHelp} {t.localOnly}</p><div className="setting-actions"><button className="secondary-button" onClick={exportIndex} disabled={!files.length}><Download size={15}/> Export metadata</button><button className="danger-button" onClick={()=>{clearIndex();setShowSettings(false)}} disabled={!files.length}><Trash2 size={15}/> {t.clear}</button></div></div><div className="modal-bottom"><ShieldCheck size={15}/> Local index is stored in this browser only.</div></section></div>}
     {busy&&<div className="busy-pill"><span className="spinner"/> Indexing files…</div>}
   </div>;
