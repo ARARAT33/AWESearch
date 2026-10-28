@@ -181,7 +181,7 @@ export default function App() {
       </section>
       <section className="content-area">
         {notice && <div className="notice"><ShieldCheck size={17}/><span>{notice}</span><button onClick={()=>setNotice('')} aria-label="Dismiss"><X size={16}/></button></div>}
-        {!query.trim() ? <div className="welcome-grid">
+        {mode !== 'web' && !query.trim() ? <div className="welcome-grid">
           <div className="welcome-card primary-card"><div className="card-icon"><FolderSearch size={23}/></div><div className="card-tag">PRIVATE BY DESIGN</div><h2>{t.emptyTitle}</h2><p>{t.emptyText}</p><div className="hero-buttons"><button className="primary-button" onClick={()=>fileRef.current?.click()}><Plus size={17}/>Add files</button><button className="secondary-button" onClick={openFolderPicker}><FolderSearch size={15}/>Index folder</button></div><div className="card-decoration"><Search size={92}/></div></div>
           <div className="stat-card"><div className="stat-icon"><Files size={19}/></div><span>{t.indexed}</span><strong>{files.length.toLocaleString()}</strong><small>Saved in this browser</small><div className="stat-bottom"><span className="status-dot"/>{files.length ? 'INDEX ACTIVE' : 'READY TO INDEX'}</div></div>
           <div className="feature-card"><div className="feature-head"><div className="feature-icon"><ShieldCheck size={19}/></div><span>LOCAL-FIRST</span></div><h3>{t.privacy}</h3><p>{t.privacyText}</p><div className="feature-line"/><p className="muted">{t.indexHelp}</p></div>
