@@ -48,5 +48,20 @@ export async function extractFileText(file: File): Promise<{ text: string; warni
       await document?.destroy().catch(() => undefined);
     }
   }
-  return { text: '', warning: extension === 'docx' || extension === 'doc' ? 'Office document text extraction is not enabled yet.' : undefined };
+  if (extension === 'docx') {
+    if (file.size > MAX_PDF_BYTES) return { text: '', warning: 'DOCX exceeds the 20 MB extraction limit; filename and metadata were indexed.' };
+    try {
+      const mammoth = await import('mammoth');
+      const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+      const text = normalizeExtractedText(result.value, MAX_EXTRACTED_CHARS);
+      return {
+        text,
+        warning: text.trim() ? undefined : 'No readable text was found in this DOCX file.'
+      };
+    } catch {
+      return { text: '', warning: 'Could not extract this DOCX. The file may be damaged, encrypted, or unsupported.' };
+    }
+  }
+  if (extension === 'doc') return { text: '', warning: 'Legacy .doc files are not supported yet; filename and metadata were indexed.' };
+  return { text: '', warning: undefined };
 }
