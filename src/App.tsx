@@ -72,6 +72,7 @@ export default function App() {
   const [mode, setMode] = useState<'all'|'local'|'web'>('all');
   const [files, setFiles] = useState<IndexedFile[]>([]);
   const [indexReady, setIndexReady] = useState(false);
+  const [settingsReady, setSettingsReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [showSettings, setShowSettings] = useState(false);
@@ -97,20 +98,22 @@ export default function App() {
       const savedGlow = localStorage.getItem('awesearch-glow');
       if (savedGlow !== null) setGlow(savedGlow === 'true');
     } catch { /* Corrupt browser storage is safely ignored. */ }
+    setSettingsReady(true);
     return () => { active = false; };
   }, []);
   useEffect(() => {
     if (!indexReady) return;
     void saveIndex(files).catch(() => setNotice('Browser storage is unavailable. Export the index to avoid losing this session.'));
   }, [files, indexReady]);
-  useEffect(() => { localStorage.setItem('awesearch-lang', lang); document.documentElement.lang = lang; }, [lang]);
-  useEffect(() => { try { localStorage.setItem('awesearch-web-provider', webProvider); } catch { /* Session-only fallback. */ } }, [webProvider]);
+  useEffect(() => { document.documentElement.lang = lang; if (!settingsReady) return; try { localStorage.setItem('awesearch-lang', lang); } catch { /* Session-only fallback. */ } }, [lang, settingsReady]);
+  useEffect(() => { if (!settingsReady) return; try { localStorage.setItem('awesearch-web-provider', webProvider); } catch { /* Session-only fallback. */ } }, [webProvider, settingsReady]);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     document.documentElement.dataset.motion = motion ? 'on' : 'off';
     document.documentElement.dataset.glow = glow ? 'on' : 'off';
+    if (!settingsReady) return;
     try { localStorage.setItem('awesearch-theme', theme); localStorage.setItem('awesearch-motion', String(motion)); localStorage.setItem('awesearch-glow', String(glow)); } catch { /* Preferences remain usable for this session. */ }
-  }, [theme, motion, glow]);
+  }, [theme, motion, glow, settingsReady]);
 
   const results = useMemo(() => searchIndexedFiles(files, query), [files, query]);
   const shownResults = mode === 'web' ? [] : results;
