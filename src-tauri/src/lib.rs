@@ -217,7 +217,10 @@ mod tests {
         let text_file = result.iter().find(|file| file.name == "hello.txt").unwrap();
         assert_eq!(text_file.path, "nested/hello.txt");
         assert_eq!(text_file.text, "local native search works");
-        let binary_file = result.iter().find(|file| file.name == "ignored.exe").unwrap();
+        let binary_file = result
+            .iter()
+            .find(|file| file.name == "ignored.exe")
+            .unwrap();
         assert!(binary_file.text.is_empty());
 
         fs::remove_dir_all(root).unwrap();
