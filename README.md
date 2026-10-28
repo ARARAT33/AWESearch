@@ -1,10 +1,21 @@
 # AWESEARCH
 
-**One search box for your files and the web.** AWESEARCH is the AWE ecosystem's cross-platform search and browsing workspace, designed for Android, Linux, Windows, macOS, and the web.
+**One search workspace for your local files and the open web.** AWESEARCH is an AWE ecosystem prototype for Android, Linux, Windows, macOS, and the web. The web app is usable now for browser-permitted local indexing and provider-based web searching; native capabilities remain in development.
+
+## Current working web MVP
+
+- **Local search:** choose files or a folder, index filenames and supported text, and search by filename, path, or content with relevance scoring and snippets.
+- **Persistent local index:** IndexedDB first, with migration from the earlier localStorage index and a localStorage fallback where IndexedDB is unavailable.
+- **File preview:** view text that was extracted into the index, inspect file metadata, and remove an item from the local index.
+- **Web search:** choose DuckDuckGo, Google, or Bing. Queries open in a new tab at the chosen provider; the app does not upload local files or index content to the provider.
+- **Appearance:** device-adaptive theme plus Glass, Aurora, Midnight, Light, and Minimal options; motion and glow effects can be toggled independently.
+- **Languages:** English, Armenian, and Russian interface options.
+- **Index management:** export index metadata and clear the local index.
+- **Responsive layout:** desktop sidebar and mobile navigation.
 
 ## UI previews
 
-These SVG preview images are stored in the repository so the product direction is visible directly on GitHub. They are **illustrative UI previews**, not screenshots captured from a deployed production service; result cards use sample content.
+These SVG preview images communicate the product direction. They are **illustrative previews**, not screenshots captured from a deployed production service.
 
 ### Desktop workspace
 
@@ -18,48 +29,50 @@ These SVG preview images are stored in the repository so the product direction i
 
 ![AWESEARCH mobile layout preview](docs/screenshots/mobile-home.svg)
 
-## Product goals
+## Known limitations — not yet a complete native product
 
-- **Local-first indexed search:** users choose folders; an index supports fast filename and extracted-text search. Folder access is explicit and revocable.
-- **Web discovery:** a provider-based web search interface returns links, titles, snippets, and source information. Search providers must be configured; no fake results.
-- **Browser workspace:** URL navigation and saved links, with a clear distinction between the app's search interface and a full browser engine.
-- **File manager:** browse indexed files, filter by type, open files using the operating system/browser, and manage indexed folders.
-- **ASL extensions:** installable AWE Search Library packages for local extractors, language analyzers, ranking, and search providers. Extensions run with explicit permissions and must not silently access files or transmit content.
-- **Multilingual UI:** language packs and Unicode-aware search; initial UI languages include English, Armenian, and Russian.
-- **Small AI helpers:** optional, lightweight local extractors/rankers; AI is an enhancement, never required for core search.
+- The web version can access only files and folders explicitly selected by the user. It cannot continuously scan arbitrary disk paths or watch folders in the background.
+- Text extraction currently covers plain text, Markdown, HTML, JSON, CSV, XML/YAML, logs, and common source-code formats. PDF and Office extraction, image OCR, and archive indexing are not implemented in the web MVP.
+- Web search is delegated to the chosen search provider in a separate tab; the app does not yet display provider results inside its own results list or use a server-side search API.
+- The file preview shows extracted text from the index. It cannot reopen an arbitrary local path automatically after the browser's file handle has been discarded.
+- The Tauri shell is a scaffold. Native SQLite FTS5 indexing, incremental folder watchers, OS file-manager integration, and production installers still need implementation and platform testing.
+- ASL (AWE Search Library) has a documented package and permission design, but package installation, signatures, sandboxing, and extension runtime are not implemented yet.
+- Full browser-engine compatibility and AI-powered readers/helpers are future milestones, not features claimed as working today.
 
-## Repository status
-
-This repository is being bootstrapped. The current web prototype provides a responsive UI, client-side file selection, an in-browser index, and local filename/text search. Browser security limits which folders a website can access. Reliable background indexing of arbitrary folders, OS file-manager integration, native browser engine integration, and signed ASL packages require the native app and backend work described in `docs/ARCHITECTURE.md`.
-
-## Run the web prototype
+## Run the web MVP
 
 Requirements: Node.js 20+.
 
 ```bash
 npm install
 npm run dev
+npm run typecheck
 npm run build
 ```
 
-## Platform plan
+## Planned architecture
 
-- **Web:** Vite + React; file access only after explicit user selection, browser-dependent.
+- **Web:** Vite + React; explicit user-selected file access and IndexedDB persistence.
 - **Windows / macOS / Linux:** Tauri 2 desktop shell with native filesystem/indexing service.
-- **Android:** Tauri 2 Android target, with Android Storage Access Framework permissions and scoped folder access.
-- **Index:** SQLite FTS5 on native platforms; IndexedDB in web prototype.
-- **Text extraction:** pluggable, sandboxed extractors for plain text, Markdown, HTML, PDF, and office documents.
-- **Search:** local index first; external web providers configured separately.
-- **ASL:** versioned, signed, permission-declared extension bundles. See `docs/ASL.md`.
+- **Android:** Tauri 2 Android target with Android Storage Access Framework permissions and scoped folder access.
+- **Native index:** SQLite FTS5, metadata, content hashes, incremental updates, and crash recovery.
+- **Text extraction:** bounded, testable adapters for text/Markdown/HTML/CSV/JSON, followed by PDF and Office formats.
+- **ASL:** versioned, permission-declared extension bundles. See [docs/ASL.md](docs/ASL.md).
+- **Detailed architecture and milestone gates:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Security principles
 
 1. Never index a folder without explicit consent.
 2. Never upload local file content to web search or AI services by default.
-3. Make index location, excluded folders, file types, and deletion controls visible.
+3. Keep local and web results clearly labeled.
 4. Treat extracted documents and extension packages as untrusted input.
-5. Keep web search and local search results clearly labeled.
+5. Do not embed secret provider API keys in the client-side web build.
 6. Do not claim full browser-engine support until a real engine is integrated and tested.
+7. Do not claim a platform release until its build, permission model, and real-device behavior are tested.
+
+## Release status
+
+This is an actively developed MVP, not yet a production-complete cross-platform release. A passing CI build verifies the web typecheck and production bundle; it does not by itself certify native platforms, security, performance, or every browser/device.
 
 ## License
 
