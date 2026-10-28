@@ -5,6 +5,7 @@
 ## Current working web MVP
 
 - **Local search:** choose files or a folder, index filenames and supported text, and search by filename, path, or content with relevance scoring and snippets.
+- **PDF text extraction:** extract selectable text from PDFs up to 20 MB and 200 pages (bounded to 500,000 characters). Scanned PDFs require OCR and currently fall back to filename/metadata indexing.
 - **Persistent local index:** IndexedDB first, with migration from the earlier localStorage index and a localStorage fallback where IndexedDB is unavailable.
 - **File preview:** view text that was extracted into the index, inspect file metadata, and remove an item from the local index.
 - **Web search:** choose DuckDuckGo, Google, or Bing. Queries open in a new tab at the chosen provider; the app does not upload local files or index content to the provider.
@@ -32,12 +33,16 @@ These SVG preview images communicate the product direction. They are **illustrat
 ## Known limitations — not yet a complete native product
 
 - The web version can access only files and folders explicitly selected by the user. It cannot continuously scan arbitrary disk paths or watch folders in the background.
-- Text extraction currently covers plain text, Markdown, HTML, JSON, CSV, XML/YAML, logs, and common source-code formats. PDF and Office extraction, image OCR, and archive indexing are not implemented in the web MVP.
+- Text extraction currently covers plain text, Markdown, HTML, JSON, CSV, XML/YAML, logs, common source-code formats, and selectable text from bounded PDF files. Office extraction, image OCR, and archive indexing are not implemented in the web MVP.
 - Web search is delegated to the chosen search provider in a separate tab; the app does not yet display provider results inside its own results list or use a server-side search API.
 - The file preview shows extracted text from the index. It cannot reopen an arbitrary local path automatically after the browser's file handle has been discarded.
 - The Tauri shell is a scaffold. Native SQLite FTS5 indexing, incremental folder watchers, OS file-manager integration, and production installers still need implementation and platform testing.
 - ASL (AWE Search Library) has a documented package and permission design, but package installation, signatures, sandboxing, and extension runtime are not implemented yet.
 - Full browser-engine compatibility and AI-powered readers/helpers are future milestones, not features claimed as working today.
+
+## Browser smoke tests and screenshots
+
+GitHub Actions runs Playwright smoke tests against Chromium for homepage rendering, web/settings navigation, local text-file indexing and preview, and a narrow mobile viewport. The workflow uploads real browser screenshots and test traces as the `awesearch-browser-test-results` artifact when the run completes.
 
 ## Run the web MVP
 
