@@ -22,9 +22,10 @@ export async function extractFileText(file: File): Promise<{ text: string; warni
   }
   if (extension === 'pdf') {
     if (file.size > MAX_PDF_BYTES) return { text: '', warning: 'PDF exceeds the 20 MB extraction limit; filename and metadata were indexed.' };
-    let document: { numPages: number; getPage: (page: number) => Promise<{ getTextContent: () => Promise<{ items: Array<{ str?: string }> }>; cleanup?: () => void }>; destroy: () => Promise<void> } | undefined;
+    type ExtractedPdf = { numPages: number; getPage: (page: number) => Promise<{ getTextContent: () => Promise<{ items: Array<{ str?: string }> }>; cleanup?: () => void }>; destroy: () => Promise<void> };
+    let document: ExtractedPdf | undefined;
     try {
-      document = await getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise as typeof document;
+      document = await getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise as unknown as ExtractedPdf;
       const pages = Math.min(document.numPages, MAX_PDF_PAGES);
       const chunks: string[] = [];
       let charCount = 0;
