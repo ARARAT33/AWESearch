@@ -27,9 +27,10 @@ describe('local search', () => {
     expect(results[0].score).toBeGreaterThan(results[1].score);
   });
 
-  it('requires every query term to match somewhere in each result', () => {
+  it('ranks full multi-term matches above partial matches', () => {
     const results = searchIndexedFiles(files, 'ancient maps');
-    expect(results.map(result => result.id)).toEqual(['1']);
+    expect(results.map(result => result.id)).toEqual(['1', '2']);
+    expect(results[0].matched).toBeGreaterThan(results[1].matched);
   });
 
   it('creates a useful content excerpt', () => {
