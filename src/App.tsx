@@ -1,4 +1,6 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { invoke, isTauri } from '@tauri-apps/api/core';
+import { open } from '@tauri-apps/plugin-dialog';
 import { extOf, searchIndexedFiles, type IndexedFile } from './search';
 import { extractFileText } from './extract';
 import { Search, Globe2, FolderSearch, Files, Settings2, Languages, ArrowUpRight, FileText, FileImage, File, Plus, Trash2, Download, ShieldCheck, Sparkles, ExternalLink, X, Menu, HardDrive, CircleHelp, Palette, Monitor, WandSparkles } from 'lucide-react';
@@ -141,7 +143,31 @@ export default function App() {
     event.target.value = '';
   };
   const clearIndex = () => { setFiles([]); setNotice('Local index cleared.'); };
-  const openFolderPicker = () => { if (!folderRef.current) return; folderRef.current.setAttribute('webkitdirectory', ''); folderRef.current.click(); };
+  const openFolderPicker = async () => {
+    if (isTauri()) {
+      try {
+        const selected = await open({ directory: true, multiple: false, title: 'Choose a folder to index locally' });
+        if (typeof selected !== 'string') return;
+        setBusy(true);
+        setNotice('');
+        const indexed = await invoke<IndexedFile[]>('index_folder', { path: selected });
+        setFiles(old => {
+          const byId = new Map(old.map(file => [file.id, file]));
+          indexed.forEach(file => byId.set(file.id, file));
+          return [...byId.values()].sort((a, b) => b.modified - a.modified);
+        });
+        setNotice('Native index added ' + indexed.length + ' files. Text indexing is bounded to 10,000 files, 2 MB per text file, and 50 MB of text total. PDF/DOCX extraction is currently available through browser file selection.');
+      } catch (error) {
+        setNotice('Could not index the selected folder: ' + (error instanceof Error ? error.message : String(error)));
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+    if (!folderRef.current) return;
+    folderRef.current.setAttribute('webkitdirectory', '');
+    folderRef.current.click();
+  };
   const runWebSearch = () => {
     const term = query.trim();
     if (!term) { setNotice('Enter a search phrase first.'); return; }
