@@ -129,10 +129,6 @@ fn index_folder(path: String) -> Result<Vec<NativeIndexedFile>, String> {
             file_type: if extension.is_empty() { "file".to_string() } else { extension },
             text,
         });
-        if total_text_bytes >= MAX_NATIVE_TEXT_TOTAL {
-            // Keep listing metadata, but don't read any more document content.
-            // The text cap is enforced by read_bounded_text for subsequent files.
-        }
     }
 
     Ok(indexed)
@@ -165,5 +161,28 @@ mod tests {
         assert!(is_text_extension("rs"));
         assert!(!is_text_extension("exe"));
         assert!(!is_text_extension("pdf"));
+    }
+
+    #[test]
+    fn indexes_a_selected_folder_recursively() {
+        use super::index_folder;
+        use std::{fs, time::{SystemTime, UNIX_EPOCH}};
+
+        let unique = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+        let root = std::env::temp_dir().join(format!("awesearch-native-test-{unique}"));
+        let nested = root.join("nested");
+        fs::create_dir_all(&nested).unwrap();
+        fs::write(nested.join("hello.txt"), "local native search works").unwrap();
+        fs::write(nested.join("ignored.exe"), [0_u8, 1, 2, 3]).unwrap();
+
+        let result = index_folder(root.to_string_lossy().into_owned()).unwrap();
+        assert_eq!(result.len(), 2);
+        let text_file = result.iter().find(|file| file.name == "hello.txt").unwrap();
+        assert_eq!(text_file.path, "nested/hello.txt");
+        assert_eq!(text_file.text, "local native search works");
+        let binary_file = result.iter().find(|file| file.name == "ignored.exe").unwrap();
+        assert!(binary_file.text.is_empty());
+
+        fs::remove_dir_all(root).unwrap();
     }
 }
