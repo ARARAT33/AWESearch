@@ -1,5 +1,5 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { Search, Globe2, FolderSearch, Files, Settings2, Languages, ArrowUpRight, FileText, FileImage, File, Plus, Trash2, Download, ShieldCheck, Sparkles, ExternalLink, X, Menu, HardDrive, CircleHelp } from 'lucide-react';
+import { Search, Globe2, FolderSearch, Files, Settings2, Languages, ArrowUpRight, FileText, FileImage, File, Plus, Trash2, Download, ShieldCheck, Sparkles, ExternalLink, X, Menu, HardDrive, CircleHelp, Palette, Monitor, WandSparkles } from 'lucide-react';
 
 type IndexedFile = { id: string; name: string; path: string; size: number; modified: number; type: string; text: string };
 type Lang = 'en' | 'hy' | 'ru';
@@ -15,6 +15,10 @@ const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'
 
 export default function App() {
   const [lang, setLang] = useState<Lang>('en');
+  type Theme = 'auto' | 'glass' | 'aurora' | 'midnight' | 'light' | 'minimal';
+  const [theme, setTheme] = useState<Theme>('auto');
+  const [motion, setMotion] = useState(true);
+  const [glow, setGlow] = useState(true);
   const [query, setQuery] = useState('');
   const [mode, setMode] = useState<'all'|'local'|'web'>('all');
   const [files, setFiles] = useState<IndexedFile[]>([]);
@@ -32,6 +36,12 @@ export default function App() {
       if (raw) setFiles(JSON.parse(raw) as IndexedFile[]);
       const savedLang = localStorage.getItem('awesearch-lang');
       if (savedLang === 'en' || savedLang === 'hy' || savedLang === 'ru') setLang(savedLang);
+      const savedTheme = localStorage.getItem('awesearch-theme');
+      if (savedTheme === 'auto' || savedTheme === 'glass' || savedTheme === 'aurora' || savedTheme === 'midnight' || savedTheme === 'light' || savedTheme === 'minimal') setTheme(savedTheme);
+      const savedMotion = localStorage.getItem('awesearch-motion');
+      if (savedMotion !== null) setMotion(savedMotion === 'true');
+      const savedGlow = localStorage.getItem('awesearch-glow');
+      if (savedGlow !== null) setGlow(savedGlow === 'true');
     } catch { /* Corrupt browser storage is safely ignored. */ }
   }, []);
   useEffect(() => {
@@ -40,6 +50,12 @@ export default function App() {
     }
   }, [files]);
   useEffect(() => { localStorage.setItem('awesearch-lang', lang); document.documentElement.lang = lang; }, [lang]);
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.dataset.motion = motion ? 'on' : 'off';
+    document.documentElement.dataset.glow = glow ? 'on' : 'off';
+    try { localStorage.setItem('awesearch-theme', theme); localStorage.setItem('awesearch-motion', String(motion)); localStorage.setItem('awesearch-glow', String(glow)); } catch { /* Preferences remain usable for this session. */ }
+  }, [theme, motion, glow]);
 
   const results = useMemo(() => {
     const terms = query.toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
@@ -129,8 +145,8 @@ export default function App() {
       <footer><span>© AWESEARCH · AWE ECOSYSTEM</span><span><ShieldCheck size={13}/> PRIVATE BY DEFAULT</span><button onClick={()=>setShowSettings(true)}><CircleHelp size={14}/> Help & settings</button></footer>
     </main>
     <input ref={fileRef} className="hidden-input" type="file" multiple onChange={addFiles} />
-    <input ref={folderRef} className="hidden-input" type="file" multiple onChange={addFiles} />
-    {showSettings&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setShowSettings(false)}}><section className="settings-modal"><div className="modal-title"><div><span className="eyebrow">AWESEARCH</span><h2>{t.settings}</h2></div><button className="icon-button" onClick={()=>setShowSettings(false)} aria-label="Close"><X size={19}/></button></div><label className="setting-label">{t.lang}</label><div className="language-options">{(['en','hy','ru'] as Lang[]).map(l=><button className={lang===l?'chosen':''} key={l} onClick={()=>setLang(l)}>{l==='en'?'English':l==='hy'?'Հայերեն':'Русский'}{lang===l&&<span>✓</span>}</button>)}</div><div className="setting-block"><h3>{t.fileTypes}</h3><p>{t.typeText}</p></div><div className="setting-block"><h3>Web search provider</h3><p>{t.webNotice} Provider integration will be enabled in a later milestone; no fake online results are shown.</p></div><div className="setting-block"><h3>Privacy & index</h3><p>{t.indexHelp} {t.localOnly}</p><div className="setting-actions"><button className="secondary-button" onClick={exportIndex} disabled={!files.length}><Download size={15}/> Export metadata</button><button className="danger-button" onClick={()=>{clearIndex();setShowSettings(false)}} disabled={!files.length}><Trash2 size={15}/> {t.clear}</button></div></div><div className="modal-bottom"><ShieldCheck size={15}/> Local index is stored in this browser only.</div></section></div>}
+    <input ref={folderRef} className="hidden-input" type="file" multiple onChange={addFiles} webkitdirectory="" />
+    {showSettings&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setShowSettings(false)}}><section className="settings-modal"><div className="modal-title"><div><span className="eyebrow">AWESEARCH</span><h2>{t.settings}</h2></div><button className="icon-button" onClick={()=>setShowSettings(false)} aria-label="Close"><X size={19}/></button></div><label className="setting-label">{t.lang}</label><div className="language-options">{(['en','hy','ru'] as Lang[]).map(l=><button className={lang===l?'chosen':''} key={l} onClick={()=>setLang(l)}>{l==='en'?'English':l==='hy'?'Հայերեն':'Русский'}{lang===l&&<span>✓</span>}</button>)}</div><div className="setting-block appearance-block"><div className="appearance-heading"><div><h3><Palette size={15}/> Appearance & effects</h3><p>Choose your own look. Auto adapts to your device and prefers a comfortable, responsive layout.</p></div></div><div className="theme-grid">{([['auto','Device adaptive','Smart default'],['glass','Glass','Frosted panels'],['aurora','Aurora','Colorful glow'],['midnight','Midnight','Deep dark'],['light','Light','Bright & clean'],['minimal','Minimal','Quiet & fast']] as [Theme,string,string][]).map(([value,title,description])=><button key={value} className={'theme-option theme-'+value+(theme===value?' chosen':'')} onClick={()=>setTheme(value)} aria-pressed={theme===value}><span className="theme-preview"><i/><i/><i/></span><span className="theme-copy"><b>{title}</b><small>{description}</small></span>{theme===value&&<span className="theme-check">✓</span>}</button>)}</div><div className="effect-toggles"><label className="toggle-row"><span><WandSparkles size={16}/><span><b>Motion & transitions</b><small>Subtle, smooth interface animations</small></span></span><input type="checkbox" checked={motion} onChange={e=>setMotion(e.target.checked)}/></label><label className="toggle-row"><span><Sparkles size={16}/><span><b>Glow & ambient effects</b><small>Soft light, gradients and glass highlights</small></span></span><input type="checkbox" checked={glow} onChange={e=>setGlow(e.target.checked)}/></label></div><div className="appearance-foot"><Monitor size={14}/> Saved on this device · You can change this any time</div></div><div className="setting-block"><h3>{t.fileTypes}</h3><p>{t.typeText}</p></div><div className="setting-block"><h3>Web search provider</h3><p>{t.webNotice} Provider integration will be enabled in a later milestone; no fake online results are shown.</p></div><div className="setting-block"><h3>Privacy & index</h3><p>{t.indexHelp} {t.localOnly}</p><div className="setting-actions"><button className="secondary-button" onClick={exportIndex} disabled={!files.length}><Download size={15}/> Export metadata</button><button className="danger-button" onClick={()=>{clearIndex();setShowSettings(false)}} disabled={!files.length}><Trash2 size={15}/> {t.clear}</button></div></div><div className="modal-bottom"><ShieldCheck size={15}/> Local index is stored in this browser only.</div></section></div>}
     {busy&&<div className="busy-pill"><span className="spinner"/> Indexing files…</div>}
   </div>;
 }
