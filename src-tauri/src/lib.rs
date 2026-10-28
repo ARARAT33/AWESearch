@@ -1,9 +1,5 @@
 use serde::Serialize;
-use std::{
-    fs,
-    path::PathBuf,
-    time::UNIX_EPOCH,
-};
+use std::{fs, path::PathBuf, time::UNIX_EPOCH};
 use walkdir::{DirEntry, WalkDir};
 
 const MAX_NATIVE_FILES: usize = 10_000;
@@ -35,10 +31,36 @@ fn should_visit(entry: &DirEntry) -> bool {
 fn is_text_extension(extension: &str) -> bool {
     matches!(
         extension,
-        "txt" | "md" | "markdown" | "html" | "htm" | "json" | "csv" | "xml"
-            | "yaml" | "yml" | "log" | "ts" | "tsx" | "js" | "jsx" | "css"
-            | "scss" | "py" | "rs" | "go" | "java" | "kt" | "c" | "h" | "cpp"
-            | "sh" | "toml" | "ini" | "sql" | "svg"
+        "txt"
+            | "md"
+            | "markdown"
+            | "html"
+            | "htm"
+            | "json"
+            | "csv"
+            | "xml"
+            | "yaml"
+            | "yml"
+            | "log"
+            | "ts"
+            | "tsx"
+            | "js"
+            | "jsx"
+            | "css"
+            | "scss"
+            | "py"
+            | "rs"
+            | "go"
+            | "java"
+            | "kt"
+            | "c"
+            | "h"
+            | "cpp"
+            | "sh"
+            | "toml"
+            | "ini"
+            | "sql"
+            | "svg"
     )
 }
 
@@ -114,7 +136,10 @@ fn index_folder(path: String) -> Result<Vec<NativeIndexedFile>, String> {
             .min(u64::MAX as u128) as u64;
 
         let text = if is_text_extension(&extension) && size <= MAX_NATIVE_TEXT_PER_FILE as u64 {
-            read_bounded_text(entry.path(), MAX_NATIVE_TEXT_TOTAL.saturating_sub(total_text_bytes))
+            read_bounded_text(
+                entry.path(),
+                MAX_NATIVE_TEXT_TOTAL.saturating_sub(total_text_bytes),
+            )
         } else {
             String::new()
         };
@@ -126,7 +151,11 @@ fn index_folder(path: String) -> Result<Vec<NativeIndexedFile>, String> {
             path: relative_path,
             size,
             modified,
-            file_type: if extension.is_empty() { "file".to_string() } else { extension },
+            file_type: if extension.is_empty() {
+                "file".to_string()
+            } else {
+                extension
+            },
             text,
         });
     }
@@ -146,7 +175,10 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::{is_text_extension, MAX_NATIVE_FILES, MAX_NATIVE_TEXT_PER_FILE, MAX_NATIVE_TEXT_TOTAL};
+    use super::{
+        index_folder, is_text_extension, MAX_NATIVE_FILES, MAX_NATIVE_TEXT_PER_FILE,
+        MAX_NATIVE_TEXT_TOTAL,
+    };
 
     #[test]
     fn native_index_limits_are_bounded() {
@@ -165,10 +197,15 @@ mod tests {
 
     #[test]
     fn indexes_a_selected_folder_recursively() {
-        use super::index_folder;
-        use std::{fs, time::{SystemTime, UNIX_EPOCH}};
+        use std::{
+            fs,
+            time::{SystemTime, UNIX_EPOCH},
+        };
 
-        let unique = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
         let root = std::env::temp_dir().join(format!("awesearch-native-test-{unique}"));
         let nested = root.join("nested");
         fs::create_dir_all(&nested).unwrap();
