@@ -1,7 +1,7 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { extOf, searchIndexedFiles, TEXT_EXT, type IndexedFile } from './search';
 import { Search, Globe2, FolderSearch, Files, Settings2, Languages, ArrowUpRight, FileText, FileImage, File, Plus, Trash2, Download, ShieldCheck, Sparkles, ExternalLink, X, Menu, HardDrive, CircleHelp, Palette, Monitor, WandSparkles } from 'lucide-react';
 
-type IndexedFile = { id: string; name: string; path: string; size: number; modified: number; type: string; text: string };
 type Lang = 'en' | 'hy' | 'ru';
 type WebProvider = 'duckduckgo' | 'google' | 'bing';
 const labels: Record<Lang, Record<string, string>> = {
@@ -9,8 +9,6 @@ const labels: Record<Lang, Record<string, string>> = {
   hy: { tagline: 'Գտիր ամեն ինչ։ Ամենուր։', sub: 'Քո ֆայլերն ու համացանցը՝ մեկ տեղում։', placeholder: 'Որոնիր ֆայլեր, թղթապանակներ կամ համացանցում…', all: 'Բոլորը', local: 'Տեղային ֆայլեր', web: 'Համացանց', folders: 'Ինդեքսավորված ֆայլեր', add: 'Ավելացնել ֆայլեր կամ պանակ', indexed: 'Ինդեքսավորված տարրեր', privacy: 'Գաղտնիություն՝ առաջին տեղում', privacyText: 'Ֆայլերը մնում են այս սարքում։ Տեղային որոնումը ոչինչ չի վերբեռնում։', emptyTitle: 'Սկսիր որոնումը', emptyText: 'Ավելացրու ֆայլեր՝ անձնական ինդեքս ստեղծելու համար, կամ ընտրիր Համացանց։', recent: 'Վերջին ինդեքսավորվածները', clear: 'Մաքրել ինդեքսը', webNotice: 'Համացանցային որոնման ծառայությունը դեռ կարգավորված չէ։ Տեղային որոնումն աշխատում է։', localEmpty: 'Տեղային արդյունքներ չկան', settings: 'Որոնման կարգավորումներ', lang: 'Լեզու', fileTypes: 'Աջակցվող ձևաչափեր', typeText: 'Տեքստ, Markdown, HTML, JSON, CSV և ծրագրային կոդ։', results: 'արդյունք', noText: 'Համընկնում է անվան մեջ', source: 'Տեղային ինդեքս', open: 'Բացել', choose: 'Ընտրել ֆայլեր', drop: 'Ընտրիր ֆայլեր կամ գցիր այստեղ', localOnly: 'Բրաուզերը հասանելիություն է տալիս միայն քո ընտրած ֆայլերին։', about: 'AWESEARCH-ի մասին', indexHelp: 'Ինդեքսավորիր միայն վստահելի պանակները։ Կարող ես ցանկացած պահի մաքրել ինդեքսը։' },
   ru: { tagline: 'Найди что угодно. Где угодно.', sub: 'Ваши файлы и интернет — в одном месте.', placeholder: 'Поиск файлов, папок, документов или в интернете…', all: 'Все', local: 'Локальные файлы', web: 'Интернет', folders: 'Проиндексированные файлы', add: 'Добавить файлы или папку', indexed: 'Элементов в индексе', privacy: 'Конфиденциальность прежде всего', privacyText: 'Файлы остаются на устройстве. Локальный поиск ничего не загружает.', emptyTitle: 'Начните поиск', emptyText: 'Добавьте файлы для создания локального индекса или выберите Интернет.', recent: 'Недавно проиндексировано', clear: 'Очистить индекс', webNotice: 'Провайдер веб-поиска ещё не настроен. Локальный поиск уже работает.', localEmpty: 'Совпадений не найдено', settings: 'Настройки поиска', lang: 'Язык', fileTypes: 'Поддерживается сейчас', typeText: 'Текст, Markdown, HTML, JSON, CSV и исходный код.', results: 'результатов', noText: 'Совпадение по имени', source: 'Локальный индекс', open: 'Открыть', choose: 'Выбрать файлы', drop: 'Выберите файлы или перетащите их сюда', localOnly: 'Браузер получает доступ только к выбранным вами файлам.', about: 'О AWESEARCH', indexHelp: 'Индексируйте только доверенные папки. Индекс можно очистить в любой момент.' }
 };
-const TEXT_EXT = new Set(['txt','md','markdown','html','htm','json','csv','xml','yaml','yml','log','ts','tsx','js','jsx','css','scss','py','rs','go','java','kt','c','h','cpp','sh','toml','ini','sql','svg']);
-const extOf = (name: string) => name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
 const fmtSize = (n: number) => n < 1024 ? n + ' B' : n < 1048576 ? (n/1024).toFixed(1) + ' KB' : (n/1048576).toFixed(1) + ' MB';
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 
@@ -114,18 +112,7 @@ export default function App() {
     try { localStorage.setItem('awesearch-theme', theme); localStorage.setItem('awesearch-motion', String(motion)); localStorage.setItem('awesearch-glow', String(glow)); } catch { /* Preferences remain usable for this session. */ }
   }, [theme, motion, glow]);
 
-  const results = useMemo(() => {
-    const terms = query.toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
-    if (!terms.length) return [];
-    return files.map(f => {
-      const name = f.name.toLocaleLowerCase();
-      const path = f.path.toLocaleLowerCase();
-      const body = f.text.toLocaleLowerCase();
-      const matched = terms.filter(term => name.includes(term) || path.includes(term) || body.includes(term));
-      const score = matched.length * 10 + (terms.every(term => name.includes(term)) ? 20 : 0) + (terms.every(term => body.includes(term)) ? 5 : 0);
-      return { ...f, score, matched: matched.length, excerpt: excerpt(f.text, terms) };
-    }).filter(f => f.matched > 0).sort((a,b) => b.score-a.score || b.modified-a.modified);
-  }, [files, query]);
+  const results = useMemo(() => searchIndexedFiles(files, query), [files, query]);
   const shownResults = mode === 'web' ? [] : results;
   const addFiles = async (event: ChangeEvent<HTMLInputElement>) => {
     const chosen = Array.from(event.target.files ?? []);
@@ -215,15 +202,6 @@ export default function App() {
   </div>;
 }
 
-function excerpt(text: string, terms: string[]) {
-  if (!text) return '';
-  const lower = text.toLocaleLowerCase();
-  let at = -1;
-  for (const term of terms) { const i = lower.indexOf(term); if (i>=0 && (at<0 || i<at)) at=i; }
-  if (at<0) at=0;
-  const start=Math.max(0,at-65), end=Math.min(text.length,at+190);
-  return (start>0?'…':'')+text.slice(start,end).replace(/\s+/g,' ').trim()+(end<text.length?'…':'');
-}
 function iconFor(type: string) {
   if (['png','jpg','jpeg','gif','webp','svg','bmp'].includes(type)) return <FileImage size={18}/>;
   if (['txt','md','markdown','html','htm','pdf','doc','docx'].includes(type)) return <FileText size={18}/>;
